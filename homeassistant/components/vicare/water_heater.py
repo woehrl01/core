@@ -8,6 +8,7 @@ from homeassistant.components.water_heater import (
     WaterHeaterEntity,
 )
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
+from homeassistant.helpers import entity_platform
 
 from . import (
     DOMAIN as VICARE_DOMAIN,
@@ -18,6 +19,9 @@ from . import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+SERVICE_ACTIVATE_ONETIMECHARGE = "activate_onetimecharge"
 
 VICARE_MODE_DHW = "dhw"
 VICARE_MODE_DHWANDHEATING = "dhwAndHeating"
@@ -47,13 +51,13 @@ HA_TO_VICARE_HVAC_DHW = {
 }
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Create the ViCare water_heater devices."""
     if discovery_info is None:
         return
     vicare_api = hass.data[VICARE_DOMAIN][VICARE_API]
     heating_type = hass.data[VICARE_DOMAIN][VICARE_HEATING_TYPE]
-    add_entities(
+    async_add_entities(
         [
             ViCareWater(
                 f"{hass.data[VICARE_DOMAIN][VICARE_NAME]} Water",
@@ -61,6 +65,15 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                 heating_type,
             )
         ]
+    )
+
+    platform = entity_platform.current_platform.get()
+
+    platform.async_register_entity_service(
+        SERVICE_ACTIVATE_ONETIMECHARGE,
+        {
+        },
+        "activate_onetimecharge",
     )
 
 
@@ -92,6 +105,12 @@ class ViCareWater(WaterHeaterEntity):
             )
 
             self._current_mode = self._api.getActiveMode()
+
+            self._attributes = {}
+            self._attributes["charging_active"] = self._api.getDomesticHotWaterChargingActive()
+            self._attributes["circulation_pump_active"] = self._api.getCirculationPumpActive()
+
+
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
@@ -153,3 +172,12 @@ class ViCareWater(WaterHeaterEntity):
     def operation_list(self):
         """Return the list of available operation modes."""
         return list(HA_TO_VICARE_HVAC_DHW)
+
+    @property
+    def device_state_attributes(self):
+        """Show Device Attributes."""
+        return self._attributes
+
+    def activate_onetimecharge(self):
+        """Service function to activate one time hot water charge."""
+        self._api.activateOneTimeCharge()

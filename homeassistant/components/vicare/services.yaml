@@ -7,3 +7,9 @@ set_vicare_mode:
     vicare_mode:
       description: ViCare mode. One of "dhw", "dhwAndHeating", "heating", "dhwAndHeatingCooling", "forcedReduced", "forcedNormal" or "standby"
       example: "dhw"
+activate_onetimecharge:
+  description: Actives a one time charge of domestic hot water
+  fields:
+    entity_id:
+      description: Name(s) of vicare water heater entities.
+      example: "water_heater.vicare_water"
