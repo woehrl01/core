@@ -46,15 +46,14 @@ SENSOR_TYPES = {
     },
 }
 
-SENSORS_GENERIC = [SENSOR_CIRCULATION_PUMP_ACTIVE]
-
 SENSORS_BY_HEATINGTYPE = {
-    HeatingType.gas: [SENSOR_BURNER_ACTIVE],
-    HeatingType.heatpump: [SENSOR_COMPRESSOR_ACTIVE],
+    HeatingType.generic : [SENSOR_CIRCULATION_PUMP_ACTIVE],
+    HeatingType.gas: [SENSOR_CIRCULATION_PUMP_ACTIVE, SENSOR_BURNER_ACTIVE],
+    HeatingType.heatpump: [SENSOR_CIRCULATION_PUMP_ACTIVE, SENSOR_COMPRESSOR_ACTIVE],
 }
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Create the ViCare sensor devices."""
     if discovery_info is None:
         return
@@ -62,12 +61,9 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     vicare_api = hass.data[VICARE_DOMAIN][VICARE_API]
     heating_type = hass.data[VICARE_DOMAIN][VICARE_HEATING_TYPE]
 
-    sensors = SENSORS_GENERIC.copy()
+    sensors = SENSORS_BY_HEATINGTYPE[heating_type]
 
-    if heating_type != HeatingType.generic:
-        sensors.extend(SENSORS_BY_HEATINGTYPE[heating_type])
-
-    add_entities(
+    async_add_entities(
         [
             ViCareBinarySensor(
                 hass.data[VICARE_DOMAIN][VICARE_NAME], vicare_api, sensor

@@ -61,7 +61,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-def setup(hass, config):
+async def async_setup(hass, config):
     """Create the ViCare component."""
     conf = config[DOMAIN]
     params = {"token_file": hass.config.path(STORAGE_DIR, "vicare_token.save")}
